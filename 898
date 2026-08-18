@@ -1,0 +1,57 @@
+#include <stdlib.h>
+
+int compareInts(const void* a, const void* b) {
+    return (*(int*)a - *(int*)b);
+}
+
+int subarrayBitwiseORs(int* arr, int arrSize) {
+    int* allResults = (int*)malloc(arrSize * 32 * sizeof(int));
+    int allCount = 0;
+    
+    int curr[32];
+    int currSize = 0;
+    
+    for (int i = 0; i < arrSize; i++) {
+        int next[32];
+        int nextSize = 0;
+        
+        next[nextSize++] = arr[i];
+        
+        for (int j = 0; j < currSize; j++) {
+            int val = curr[j] | arr[i];
+            int isDuplicate = 0;
+            for (int k = 0; k < nextSize; k++) {
+                if (next[k] == val) {
+                    isDuplicate = 1;
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                next[nextSize++] = val;
+            }
+        }
+        
+        for (int j = 0; j < nextSize; j++) {
+            curr[j] = next[j];
+            allResults[allCount++] = next[j];
+        }
+        currSize = nextSize;
+    }
+    
+    if (allCount == 0) {
+        free(allResults);
+        return 0;
+    }
+    
+    qsort(allResults, allCount, sizeof(int), compareInts);
+    
+    int uniqueCount = 1;
+    for (int i = 1; i < allCount; i++) {
+        if (allResults[i] != allResults[i - 1]) {
+            allResults[uniqueCount++] = allResults[i];
+        }
+    }
+    
+    free(allResults);
+    return uniqueCount;
+}
