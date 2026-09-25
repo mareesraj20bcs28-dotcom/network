@@ -1,0 +1,127 @@
+#include <stdlib.h>
+
+int numBusesToDestination(int** routes, int routesSize, int* routesColSize,
+                          int source, int target)
+{
+    if (source == target)
+        return 0;
+
+    int** stopToBuses = (int**)calloc(1000000, sizeof(int*));
+    int* stopBusCount = (int*)calloc(1000000, sizeof(int));
+    int* stopBusCapacity = (int*)calloc(1000000, sizeof(int));
+
+    /* Create stop -> buses mapping */
+    for (int bus = 0; bus < routesSize; bus++)
+    {
+        for (int j = 0; j < routesColSize[bus]; j++)
+        {
+            int stop = routes[bus][j];
+
+            if (stopBusCount[stop] == stopBusCapacity[stop])
+            {
+                int newCapacity;
+
+                if (stopBusCapacity[stop] == 0)
+                    newCapacity = 2;
+                else
+                    newCapacity = stopBusCapacity[stop] * 2;
+
+                stopToBuses[stop] = (int*)realloc(
+                    stopToBuses[stop],
+                    newCapacity * sizeof(int)
+                );
+
+                stopBusCapacity[stop] = newCapacity;
+            }
+
+            stopToBuses[stop][stopBusCount[stop]] = bus;
+            stopBusCount[stop]++;
+        }
+    }
+
+    /* BFS queue */
+    int* queue = (int*)malloc(1000000 * sizeof(int));
+
+    int front = 0;
+    int rear = 0;
+
+    queue[rear] = source;
+    rear++;
+
+    /* Visited stops */
+    char* visitedStop = (char*)calloc(1000000, sizeof(char));
+    visitedStop[source] = 1;
+
+    /* Visited buses */
+    char* visitedBus = (char*)calloc(routesSize, sizeof(char));
+
+    int busesTaken = 0;
+
+    while (front < rear)
+    {
+        int currentLevelSize = rear - front;
+
+        busesTaken++;
+
+        for (int i = 0; i < currentLevelSize; i++)
+        {
+            int stop = queue[front];
+            front++;
+
+            /* Find buses available at this stop */
+            for (int j = 0; j < stopBusCount[stop]; j++)
+            {
+                int bus = stopToBuses[stop][j];
+
+                if (visitedBus[bus])
+                    continue;
+
+                visitedBus[bus] = 1;
+
+                /* Visit all stops of this bus */
+                for (int k = 0; k < routesColSize[bus]; k++)
+                {
+                    int nextStop = routes[bus][k];
+
+                    /* Target found */
+                    if (nextStop == target)
+                    {
+                        for (int s = 0; s < 1000000; s++)
+                            free(stopToBuses[s]);
+
+                        free(stopToBuses);
+                        free(stopBusCount);
+                        free(stopBusCapacity);
+                        free(queue);
+                        free(visitedStop);
+                        free(visitedBus);
+
+                        return busesTaken;
+                    }
+
+                    /* Add new stop to queue */
+                    if (!visitedStop[nextStop])
+                    {
+                        visitedStop[nextStop] = 1;
+
+                        queue[rear] = nextStop;
+                        rear++;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Target cannot be reached */
+    for (int s = 0; s < 1000000; s++)
+        free(stopToBuses[s]);
+
+    free(stopToBuses);
+    free(stopBusCount);
+    free(stopBusCapacity);
+    free(queue);
+    free(visitedStop);
+    free(visitedBus);
+
+    return -1;
+}
